@@ -503,7 +503,17 @@ function uniqueStoreNames(names) {
 }
 
 function ensureSupermarketNames() {
-  if (!localStorage.getItem(STORE_NAMES_KEY)) {
+  const saved = localStorage.getItem(STORE_NAMES_KEY);
+  if (!saved) {
+    saveStoreNames(BUILTIN_SUPERMARKET_NAMES);
+    return;
+  }
+  try {
+    const names = uniqueStoreNames(JSON.parse(saved || '[]'));
+    if (names.length === 0 && BUILTIN_SUPERMARKET_NAMES.length > 0) {
+      saveStoreNames(BUILTIN_SUPERMARKET_NAMES);
+    }
+  } catch {
     saveStoreNames(BUILTIN_SUPERMARKET_NAMES);
   }
 }
@@ -668,7 +678,17 @@ function uniqueDeliveryPersonNames(names) {
 }
 
 function ensureDeliveryPersonNames() {
-  if (!localStorage.getItem(DELIVERY_PERSON_NAMES_KEY)) {
+  const saved = localStorage.getItem(DELIVERY_PERSON_NAMES_KEY);
+  if (!saved) {
+    saveDeliveryPersonNames(BUILTIN_DELIVERY_PERSON_NAMES);
+    return;
+  }
+  try {
+    const names = uniqueDeliveryPersonNames(JSON.parse(saved || '[]'));
+    if (names.length === 0 && BUILTIN_DELIVERY_PERSON_NAMES.length > 0) {
+      saveDeliveryPersonNames(BUILTIN_DELIVERY_PERSON_NAMES);
+    }
+  } catch {
     saveDeliveryPersonNames(BUILTIN_DELIVERY_PERSON_NAMES);
   }
 }
