@@ -250,6 +250,7 @@ header .gear:active { background: rgba(255,255,255,.15); }
   font-size: 20px; font-weight: 700; color: #1976D2;
   padding: 6px 0;
 }
+.auto-calc.negative { color: #c62828; }
 
 /* Empty results hint */
 .search-hint { text-align: center; padding: 20px; color: #999; font-size: 14px; }
@@ -322,7 +323,7 @@ header .gear:active { background: rgba(255,255,255,.15); }
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label for="inputIncome">进项金额 *</label>
+        <label for="inputIncome">进项金额</label>
         <input type="number" id="inputIncome" min="0" step="0.01" placeholder="0.00" oninput="calcPayable()">
       </div>
       <div class="form-group">
@@ -839,8 +840,10 @@ function initDate() {
 function calcPayable() {
   const income = parseFloat(document.getElementById('inputIncome').value) || 0;
   const refund = parseFloat(document.getElementById('inputRefund').value) || 0;
-  const payable = Math.max(0, income - refund);
-  document.getElementById('displayPayable').textContent = '¥' + payable.toFixed(2);
+  const payable = income - refund;
+  const display = document.getElementById('displayPayable');
+  display.textContent = payable < 0 ? '-¥' + Math.abs(payable).toFixed(2) : '¥' + payable.toFixed(2);
+  display.classList.toggle('negative', payable < 0);
 }
 
 async function submitRecord() {
@@ -854,11 +857,15 @@ async function submitRecord() {
   const income = parseFloat(document.getElementById('inputIncome').value) || 0;
   const refund = parseFloat(document.getElementById('inputRefund').value) || 0;
   const settled = document.getElementById('inputSettled').checked;
-  const payable = Math.max(0, income - refund);
+  const payable = income - refund;
 
   if (!name) { showToast('请输入超市名字'); document.getElementById('inputName').focus(); return; }
   if (!date) { showToast('请选择日期'); return; }
-  if (income <= 0) { showToast('请输入进项金额'); document.getElementById('inputIncome').focus(); return; }
+  if (income === 0 && refund === 0) {
+    showToast('请输入进项金额或退项金额');
+    document.getElementById('inputIncome').focus();
+    return;
+  }
 
   const btn = document.getElementById('btnSubmit');
   btn.disabled = true; btn.textContent = '保存中...';
@@ -1031,9 +1038,9 @@ function renderSection(title, records, settled) {
     html += '<div class="record-body">';
     html += '<span><span class="label">送货人员</span> ' + escHtml(r.delivery_person || '-') + '</span>';
     html += '<span><span class="label">结账方式</span> ' + escHtml(r.payment_method || '-') + '</span>';
-    html += '<span><span class="label">进项</span> <span class="amount">¥' + fmt(r.income_amount) + '</span></span>';
-    html += '<span><span class="label">退项</span> ¥' + fmt(r.refund_amount) + '</span>';
-    html += '<span><span class="label">应付</span> <span class="amount payable">¥' + fmt(r.payable_amount) + '</span></span>';
+    html += '<span><span class="label">进项</span> <span class="amount">' + money(r.income_amount) + '</span></span>';
+    html += '<span><span class="label">退项</span> ' + money(r.refund_amount) + '</span>';
+    html += '<span><span class="label">应付</span> <span class="amount payable">' + money(r.payable_amount) + '</span></span>';
     html += '<span><span class="label">状态</span> ' +
       (settled
         ? '<span class="status-badge settled">已结账</span>'
@@ -1061,6 +1068,11 @@ function escHtml(s) {
 function fmt(v) {
   const n = parseFloat(v) || 0;
   return n.toFixed(2);
+}
+
+function money(v) {
+  const n = parseFloat(v) || 0;
+  return n < 0 ? '-¥' + Math.abs(n).toFixed(2) : '¥' + n.toFixed(2);
 }
 
 function downloadCurrentResults() {
